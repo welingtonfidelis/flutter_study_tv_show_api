@@ -21,4 +21,20 @@ class TvShowService {
       throw Exception('Falha ao carregar séries!');
     }
   }
+
+  Future<TvShow> fetchTvShowById(int id) async {
+    final response = await http.get(
+      Uri.parse('https://api.tvmaze.com/shows/$id'),
+    );
+
+    if (response.statusCode == 200) {
+      final TvShow tvShow;
+
+      tvShow = TvShow.fromJson(json.decode(response.body));
+
+      return tvShow;
+    } else {
+      throw Exception('Falha ao carregar série!');
+    }
+  }
 }
