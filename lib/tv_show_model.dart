@@ -30,6 +30,8 @@ class TvShow {
   }
 }
 
+enum SortType { nameAsc, ratingAsc }
+
 class TvShowModel extends ChangeNotifier {
   final List<TvShow> _tvShows = [];
   List<TvShow> get tvShows => _tvShows;
@@ -85,6 +87,24 @@ class TvShowModel extends ChangeNotifier {
         ),
       ),
     );
+    notifyListeners();
+  }
+
+  void sortTvShows(SortType sortType, bool asc) {
+    if (sortType == SortType.nameAsc) {
+      if (asc) {
+        tvShows.sort((a, b) => a.name.compareTo(b.name));
+      } else {
+        tvShows.sort((a, b) => b.name.compareTo(a.name));
+      }
+    } else if (sortType == SortType.ratingAsc) {
+      if (asc) {
+        tvShows.sort((a, b) => a.rating.compareTo(b.rating));
+      } else {
+        tvShows.sort((a, b) => b.rating.compareTo(a.rating));
+      }
+    }
+
     notifyListeners();
   }
 
