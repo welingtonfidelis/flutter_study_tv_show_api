@@ -28,19 +28,87 @@ class TvShow {
       imageUrl: json['image']?['medium'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'webChannel': webChannel,
+      'rating': rating,
+      'summary': summary,
+      'imageUrl': imageUrl,
+    };
+  }
 }
 
 enum SortType { nameAsc, ratingAsc }
 
 class TvShowModel extends ChangeNotifier {
-  final List<TvShow> _tvShows = [];
+  // Estado das séries favoritas
+  List<TvShow> _tvShows = [];
+  bool _isLoading = false;
+  String? _errorMessage = '';
   List<TvShow> get tvShows => _tvShows;
 
-  final TvShowService tvShowService = TvShowService();
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  bool get hasFavorites => _tvShows.isNotEmpty;
+
+  late final TvShowService _tvShowService;
+
+  TvShowModel() {
+    _tvShowService = TvShowService();
+
+    initialize();
+  }
+
+  Future<void> initialize() async {
+    await load();
+  }
+
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+
+    notifyListeners();
+  }
+
+  void _setErrorMessage(String? message) {
+    _errorMessage = message;
+
+    notifyListeners();
+  }
+
+  Future<void> load() async {
+    try {
+      _setLoading(true);
+      _setErrorMessage(null);
+      _tvShows = await _tvShowService.getAll();
+    } catch (e) {
+      _setErrorMessage('Falha ao carregar séries favoritas: ${e.toString()}');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> addToFavorites(TvShow tvShow) async {
+    await _tvShowService.insert(tvShow);
+
+    load();
+
+    notifyListeners();
+  }
+
+  Future<void> removeFromFavorites(TvShow tvShow) async {
+    await _tvShowService.delete(tvShow.id);
+
+    load();
+
+    notifyListeners();
+  }
 
   Future<List<TvShow>> searchTvShows(String query) async {
     try {
-      return await tvShowService.fetchTvShows(query);
+      return await _tvShowService.fetchTvShows(query);
     } catch (e) {
       throw Exception('Falha na busca: ${e.toString()}');
     }
@@ -48,46 +116,20 @@ class TvShowModel extends ChangeNotifier {
 
   Future<TvShow> getTvShowById(int id) async {
     try {
-      return await tvShowService.fetchTvShowById(id);
+      return await _tvShowService.fetchTvShowById(id);
     } catch (e) {
       throw Exception('Falha ao carregar: ${e.toString()}');
     }
   }
 
-  void addTvShow(TvShow tvShow, BuildContext context) {
-    tvShows.add(tvShow);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Série adicionada com sucesso!',
-          textAlign: TextAlign.center,
-        ),
-        duration: Duration(seconds: 2),
-      ),
-    );
-    notifyListeners();
-  }
+  Future<bool> isFavorite(TvShow tvShow) async {
+    try {
+      return await _tvShowService.isFavorite(tvShow);
+    } catch (e) {
+      _setErrorMessage('Falha ao checar favorito: ${e.toString()}');
 
-  void removeTvShow(TvShow tvShow, BuildContext context) {
-    final index = tvShows.indexWhere(
-      (show) => show.name.toLowerCase() == tvShow.name.toLowerCase(),
-    );
-    tvShows.removeAt(index);
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${tvShow.name} excluída!'),
-        duration: Duration(seconds: 3),
-        action: SnackBarAction(
-          label: 'DESFAZER',
-          onPressed: () {
-            tvShows.insert(index, tvShow);
-            notifyListeners();
-          },
-        ),
-      ),
-    );
-    notifyListeners();
+      return false;
+    }
   }
 
   void sortTvShows(SortType sortType, bool asc) {
