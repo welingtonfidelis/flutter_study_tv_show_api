@@ -115,21 +115,50 @@ class _TvShowScreenState extends State<TvShowScreen> {
                         child: Text('Voltar'),
                       ),
                       SizedBox(width: 16),
-                      tvShowModel.tvShows.any((show) => show.id == tvShow.id)
-                          ? ElevatedButton(
-                              onPressed: () {
-                                tvShowModel.removeTvShow(tvShow, context);
-                                context.go('/');
-                              },
-                              child: Text('DESFAVORITAR'),
-                            )
-                          : ElevatedButton(
-                              onPressed: () {
-                                tvShowModel.addTvShow(tvShow, context);
-                                context.go('/');
-                              },
-                              child: Text('FAVORITAR'),
-                            ),
+
+                      FutureBuilder<bool>(
+                        future: tvShowModel.isFavorite(tvShow),
+                        builder: (context, snapshot) {
+                          final isFavorite = snapshot.data ?? false;
+
+                          return isFavorite
+                              ? ElevatedButton(
+                                  onPressed: () {
+                                    tvShowModel.removeFromFavorites(tvShow);
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          '${tvShow.name} excluída!',
+                                        ),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+
+                                    context.go('/');
+                                  },
+                                  child: Text('DESFAVORITAR'),
+                                )
+                              : ElevatedButton(
+                                  onPressed: () {
+                                    tvShowModel.addToFavorites(tvShow);
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Série adicionada com sucesso!',
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+
+                                    context.go('/');
+                                  },
+                                  child: Text('FAVORITAR'),
+                                );
+                        },
+                      ),
                     ],
                   ),
                 ],

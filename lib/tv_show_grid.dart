@@ -96,21 +96,48 @@ class _TvShowGridState extends State<TvShowGrid> {
               ),
             ),
 
-            tvShowModel.tvShows.any((show) => show.id == tvShow.id)
-                ? Positioned(
-                    child: IconButton(
-                      onPressed: () =>
-                          tvShowModel.removeTvShow(tvShow, context),
-                      icon: Icon(Icons.favorite, size: 32, color: Colors.red),
-                    ),
-                  )
-                : Positioned(
-                    child: IconButton(
-                      onPressed: () =>
-                          tvShowModel.addTvShow(tvShow, context),
-                      icon: Icon(Icons.favorite_border_sharp, size: 32, color: Colors.white),
-                    ),
+            FutureBuilder<bool>(
+              future: tvShowModel.isFavorite(tvShow),
+              builder: (context, snapshot) {
+                final isFavorite = snapshot.data ?? false;
+
+                return Positioned(
+                  child: IconButton(
+                    icon: isFavorite
+                        ? Icon(Icons.favorite, size: 32, color: Colors.red)
+                        : Icon(
+                            Icons.favorite_border_sharp,
+                            size: 32,
+                            color: Colors.white,
+                          ),
+                    onPressed: () {
+                      if (isFavorite) {
+                        tvShowModel.removeFromFavorites(tvShow);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${tvShow.name} excluída!'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      } else {
+                        tvShowModel.addToFavorites(tvShow);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Série adicionada com sucesso!',
+                              textAlign: TextAlign.center,
+                            ),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
                   ),
+                );
+              },
+            ),
           ],
         );
       },
